@@ -38,4 +38,15 @@ pub struct Event {
     epicfactor: String
 }
 
+
+impl User {
+    pub fn get_avatar(&self) -> String {
+        format!("https://a.ppy.sh/{}", self.user_id)
+    }
+
+    pub fn get_profile(&self) -> String {
+        format!("https://osu.ppy.sh/users/{}", self.user_id)
+    }
+}
+
 //{\"user_id\":\"14114565\",\"username\":\"XLADoMAZ\",\"join_date\":\"2019-03-17 13:42:48\",\"count300\":\"52277\",\"count100\":\"16287\",\"count50\":\"3330\",\"playcount\":\"654\",\"ranked_score\":\"34051242\",\"total_score\":\"80904258\",\"pp_rank\":\"1108911\",\"level\":\"23.2289\",\"pp_raw\":\"225.878\",\"accuracy\":\"83.60210418701172\",\"count_rank_ss\":\"0\",\"count_rank_ssh\":\"0\",\"count_rank_s\":\"0\",\"count_rank_sh\":\"0\",\"count_rank_a\":\"7\",\"country\":\"RU\",\"total_seconds_played\":\"38541\",\"pp_country_rank\":\"125109\",\"events\":[]}]

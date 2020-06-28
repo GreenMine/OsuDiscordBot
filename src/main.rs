@@ -14,6 +14,7 @@ use serenity::prelude::{Context, EventHandler, TypeMapKey};
 use std::{env, sync::Arc};
 
 extern crate serde;
+mod ext;
 mod osu_api;
 
 use osu_api::Osu;
@@ -49,9 +50,6 @@ impl EventHandler for Handler {
 
 fn main() {
     let osu = Osu::new(env::var("OSU_TOKEN").expect("Unable to get osu token from env!"));
-    //    osu.get_beatmaps(2).await;
-
-    //    println!("{:?}", osu.get_user("Cookiezi").await?);
 
     let mut client = Client::new(
         env::var("DISCORD_TOKEN").expect("Unable to get token from env!"),
@@ -91,7 +89,60 @@ fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     };
 
-    msg.channel_id.say(&ctx.http, format!("{:?}", osu_user))?;
+    msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+            e.description(format!(
+                "Country: :flag_{}:",
+                osu_user.country.to_lowercase()
+            ));
+            e.color(ext::get_color_from_number(osu_user.user_id));
+            e.thumbnail(osu_user.get_avatar());
+            e.author(|a| {
+                a.name(&osu_user.username);
+                a.url(osu_user.get_profile());
+                a.icon_url(osu_user.get_avatar());
+                a
+            });
+
+            let pretty_level = {
+                let current_level = osu_user.level.trunc();
+                let mut pretty_level = current_level.to_string();
+                let to_new_level = ((osu_user.level - current_level) * 10f32) as usize;
+                pretty_level += &std::iter::repeat(":green_square:")
+                    .take(to_new_level)
+                    .collect::<String>();
+                pretty_level += &std::iter::repeat(":black_large_square:")
+                    .take(10 - to_new_level)
+                    .collect::<String>();
+                pretty_level += &(current_level + 1f32).to_string();
+                pretty_level
+            };
+
+            e.fields(vec![
+                (
+                    format!("World rank: {}", osu_user.pp_rank),
+                    format!("Country rank: {}", osu_user.pp_country_rank),
+                    false,
+                ),
+                (
+                    format!("Ranked score: {}", osu_user.ranked_score),
+                    format!("Accuracy: {:.2}%", osu_user.accuracy),
+                    true,
+                ),
+                (
+                    format!(
+                        "Total time played: {}",
+                        ext::pretty_time_print(osu_user.total_seconds_played)
+                    ),
+                    format!("PP: {}", osu_user.pp_raw.ceil()),
+                    true,
+                ),
+                ("Level".to_string(), pretty_level, false),
+            ]);
+            e
+        });
+        m
+    })?;
 
     Ok(())
 }

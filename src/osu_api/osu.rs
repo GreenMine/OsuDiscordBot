@@ -1,5 +1,3 @@
-//use std::collections::HashMap;
-
 use super::types;
 
 const URL: &str = "https://osu.ppy.sh/api/";
@@ -10,18 +8,16 @@ pub struct Osu {
 
 //TODO: REWRITE TO V2
 
+//Public functions(for users)
 impl Osu {
-    pub fn new(token: String) -> Self {
-        Osu { token }
+    pub fn new(token: impl AsRef<str>) -> Self {
+        Osu {
+            token: token.as_ref().to_string(),
+        }
     }
 
     pub async fn _get_beatmaps(&self, _limit: u32) {
-        //        println!(
-        //            "Response: {:?}",
-        //            self.request("get_beatmaps", &[("limit", &limit.to_string())])
-        //                .await
-        //                .expect("Error to send request!")
-        //        );
+        unimplemented!()
     }
 
     pub fn get_user(&self, name: &str) -> Result<types::User, reqwest::Error> {
@@ -29,14 +25,17 @@ impl Osu {
         let [user] = users;
         Ok(user)
     }
+}
 
+//Private functions
+impl Osu {
+    //Response time ~600ms:thinking:
     fn request<T: serde::de::DeserializeOwned>(
         &self,
         method: &str,
         data: &[(&str, &str)],
     ) -> Result<T, reqwest::Error> {
-        reqwest::blocking::get(&self.generate_request(method, data))?
-            .json()
+        reqwest::blocking::get(&self.generate_request(method, data))?.json()
     }
 
     fn generate_request(&self, method: &str, data: &[(&str, &str)]) -> String {
@@ -44,7 +43,7 @@ impl Osu {
         data.iter()
             .chain([("k", &self.token[..])].iter())
             .for_each(|(key, value)| buffer += &format!("{}={}&", key, value));
-//        println!("{}", buffer);
+        //        println!("{}", buffer);
         buffer
     }
 }
