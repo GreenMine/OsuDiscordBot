@@ -80,30 +80,27 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
         .unwrap();
     Ok(())
 }
+
 #[command]
 fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let data = ctx.data.read();
     let osu_user = if let Some(user) = data.get::<OsuContainer>() {
-        user.get_user(&args.single::<String>().unwrap()).unwrap()
+            match user.get_user(&args.single::<String>().unwrap()) {
+                Ok(user) => user,
+                Err(error) => {
+                    match error {
+                        osu_api::types::Error::Osu(osu_error) => {msg.channel_id.send_message(&ctx.http, |m| m.embed(|e| e.color(0xFF0101).title(osu_error.error)))?;},
+                        _ => {msg.channel_id.say(&ctx.http, format!("Error! {:?}", error))?;}
+                    }
+                    return Ok(());
+                }
+            }
     } else {
         return Ok(());
     };
 
     msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
-            e.description(format!(
-                "Country: :flag_{}:",
-                osu_user.country.to_lowercase()
-            ));
-            e.color(ext::get_color_from_number(osu_user.user_id));
-            e.thumbnail(osu_user.get_avatar());
-            e.author(|a| {
-                a.name(&osu_user.username);
-                a.url(osu_user.get_profile());
-                a.icon_url(osu_user.get_avatar());
-                a
-            });
-
             let pretty_level = {
                 let current_level = osu_user.level.trunc();
                 let mut pretty_level = current_level.to_string();
@@ -118,7 +115,19 @@ fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                 pretty_level
             };
 
-            e.fields(vec![
+            e.description(format!(
+                "Country: :flag_{}:",
+                osu_user.country.to_lowercase()
+            ))
+            .color(ext::get_color_from_number(osu_user.user_id))
+            .thumbnail(osu_user.get_avatar())
+            .author(|a| {
+                a.name(&osu_user.username)
+                .url(osu_user.get_profile())
+                .icon_url(osu_user.get_avatar())
+                
+            })
+            .fields(vec![
                 (
                     format!("World rank: {}", osu_user.pp_rank),
                     format!("Country rank: {}", osu_user.pp_country_rank),
@@ -138,10 +147,8 @@ fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
                     true,
                 ),
                 ("Level".to_string(), pretty_level, false),
-            ]);
-            e
-        });
-        m
+            ])
+        })
     })?;
 
     Ok(())

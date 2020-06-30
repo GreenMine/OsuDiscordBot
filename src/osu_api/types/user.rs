@@ -1,43 +1,59 @@
-
 use super::string_parse::*;
 
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct User {
-    #[serde(deserialize_with="parse_string_as_u64")]pub user_id: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub user_id: u64,
     pub username: String,
     pub join_date: String,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count300: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count50: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub playcount: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub ranked_score: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub total_score: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub pp_rank: u64,
-    #[serde(deserialize_with="parse_string_as_f32")]pub level: f32,
-    #[serde(deserialize_with="parse_string_as_f32")]pub pp_raw: f32,
-    #[serde(deserialize_with="parse_string_as_f32")]pub accuracy: f32,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count_rank_ss: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count_rank_ssh: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count_rank_s: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count_rank_sh: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub count_rank_a: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count300: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count50: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub playcount: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub ranked_score: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub total_score: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub pp_rank: u64,
+    #[serde(deserialize_with = "parse_string_as_f32")]
+    pub level: f32,
+    #[serde(deserialize_with = "parse_string_as_f32")]
+    pub pp_raw: f32,
+    #[serde(deserialize_with = "parse_string_as_f32")]
+    pub accuracy: f32,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count_rank_ss: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count_rank_ssh: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count_rank_s: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count_rank_sh: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub count_rank_a: u64,
     pub country: String,
-    #[serde(deserialize_with="parse_string_as_u64")]pub total_seconds_played: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]pub pp_country_rank: u64,
-    pub events: Vec<Event>
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub total_seconds_played: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    pub pp_country_rank: u64,
+    pub events: Vec<Event>,
 }
-
 
 #[derive(Deserialize, Debug)]
 pub struct Event {
     display_html: String,
-    #[serde(deserialize_with="parse_string_as_u64")]beatmap_id: u64,
-    #[serde(deserialize_with="parse_string_as_u64")]beatmapset_id: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    beatmap_id: u64,
+    #[serde(deserialize_with = "parse_string_as_u64")]
+    beatmapset_id: u64,
     date: String,
-    epicfactor: String
+    epicfactor: String,
 }
-
 
 impl User {
     pub fn get_avatar(&self) -> String {

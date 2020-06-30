@@ -1,4 +1,3 @@
-
 use serde::{de, Deserializer};
 use std::fmt;
 
@@ -19,10 +18,7 @@ where
         where
             E: de::Error,
         {
-            let num = value
-                .parse()
-                .map_err(|e| de::Error::custom(format!("Couldn't parse '{}' as a number: {}", value, e)))?;
-            Ok(num)
+            Ok(value.parse().unwrap_or(0_u64))
         }
     }
     d.deserialize_any(StringParserVisitor)
@@ -45,10 +41,7 @@ where
         where
             E: de::Error,
         {
-            let num = value
-                .parse()
-                .map_err(|e| de::Error::custom(format!("Couldn't parse '{}' as a number: {}", value, e)))?;
-            Ok(num)
+            Ok(value.parse().unwrap_or(0_f32))
         }
     }
     d.deserialize_any(StringParserVisitor)
