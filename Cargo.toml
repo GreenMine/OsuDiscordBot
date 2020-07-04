@@ -1,5 +1,5 @@
 [package]
-name = "discord_bot_test"
+name = "discord_bot_osu"
 version = "0.1.0"
 authors = ["GreenMine <greenmine94@gmail.com>"]
 edition = "2018"

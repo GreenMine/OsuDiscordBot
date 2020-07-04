@@ -1,8 +1,4 @@
-use super::types::{
-    self,
-    Error
-};
-
+use super::types::{self, Error};
 
 const URL: &str = "https://osu.ppy.sh/api/";
 
@@ -40,8 +36,10 @@ impl Osu {
         data: &[(&str, &str)],
     ) -> Result<T, Error> {
         let json = reqwest::blocking::get(&self.generate_request(method, data))?.json();
-        if let Err(_) = json {
-            return Err(Error::Osu(types::error::OsuError {error: "Unable to get user!".to_string()}));
+        if json.is_err() {
+            return Err(Error::Osu(types::error::OsuError {
+                error: "Unable to get user!".to_string(),
+            }));
         }
         Ok(json.unwrap())
     }

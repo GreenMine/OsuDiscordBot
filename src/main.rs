@@ -11,18 +11,27 @@ use serenity::model::{
 };
 use serenity::prelude::{Context, EventHandler, TypeMapKey};
 
-use std::{env, sync::Arc};
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
 extern crate serde;
+mod circle_buffer;
 mod ext;
 mod osu_api;
 
+use circle_buffer::CircleBuffer;
 use osu_api::Osu;
 
 struct OsuContainer;
-
 impl TypeMapKey for OsuContainer {
     type Value = Arc<Osu>;
+}
+
+struct CommandTime;
+impl TypeMapKey for CommandTime {
+    type Value = Arc<Mutex<CircleBuffer<u128>>>;
 }
 
 #[group]
@@ -51,6 +60,8 @@ impl EventHandler for Handler {
 fn main() {
     let osu = Osu::new(env::var("OSU_TOKEN").expect("Unable to get osu token from env!"));
 
+    let buffer = CircleBuffer::<u128>::new();
+
     let mut client = Client::new(
         env::var("DISCORD_TOKEN").expect("Unable to get token from env!"),
         Handler,
@@ -60,6 +71,7 @@ fn main() {
     {
         let mut data = client.data.write();
         data.insert::<OsuContainer>(Arc::new(osu));
+        data.insert::<CommandTime>(Arc::new(Mutex::new(buffer)));
     }
 
     client.with_framework(
@@ -72,10 +84,25 @@ fn main() {
 
 #[command]
 fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let data = ctx.data.read();
+    let timer = data.get::<CommandTime>().unwrap().lock()?;
+    let average_ping = if timer.current_item != 0 {
+        (timer.iter().sum::<u128>() / timer.current_item as u128) as u128
+    } else {
+        timer.values[0]
+    };
     msg.channel_id
         .say(
             &ctx.http,
-            format!("Pong! {}#{}", msg.author.name, msg.author.discriminator),
+            format!(
+                "Info about bot:\nPing to osu API: {}:{}_square:!\nBot creator: GreenMine\nBot GitHub page: https://github.com/GreenMine/OsuDiscordBot",
+                average_ping,
+                match average_ping {
+                    0..=100 => "green",
+                    101..=600 => "yellow",
+                    _ => "red"
+    }
+                ),
         )
         .unwrap();
     Ok(())
@@ -84,20 +111,29 @@ fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
 #[command]
 fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let data = ctx.data.read();
+    let command_time = std::time::Instant::now();
     let osu_user = if let Some(user) = data.get::<OsuContainer>() {
-            match user.get_user(&args.single::<String>().unwrap()) {
-                Ok(user) => user,
-                Err(error) => {
-                    match error {
-                        osu_api::types::Error::Osu(osu_error) => {msg.channel_id.send_message(&ctx.http, |m| m.embed(|e| e.color(0xFF0101).title(osu_error.error)))?;},
-                        _ => {msg.channel_id.say(&ctx.http, format!("Error! {:?}", error))?;}
+        match user.get_user(&args.single::<String>().unwrap()) {
+            Ok(user) => user,
+            Err(error) => {
+                match error {
+                    osu_api::types::Error::Osu(osu_error) => {
+                        msg.channel_id.send_message(&ctx.http, |m| {
+                            m.embed(|e| e.color(0xFF0101).title(osu_error.error))
+                        })?;
                     }
-                    return Ok(());
+                    _ => {
+                        msg.channel_id
+                            .say(&ctx.http, format!("Error! {:?}", error))?;
+                    }
                 }
+                return Ok(());
             }
+        }
     } else {
         return Ok(());
     };
+    let command_time = command_time.elapsed().as_millis();
 
     msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
@@ -123,9 +159,8 @@ fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             .thumbnail(osu_user.get_avatar())
             .author(|a| {
                 a.name(&osu_user.username)
-                .url(osu_user.get_profile())
-                .icon_url(osu_user.get_avatar())
-                
+                    .url(osu_user.get_profile())
+                    .icon_url(osu_user.get_avatar())
             })
             .fields(vec![
                 (
@@ -150,6 +185,11 @@ fn get_user(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             ])
         })
     })?;
+
+    data.get::<CommandTime>()
+        .unwrap()
+        .lock()?
+        .set_next(command_time);
 
     Ok(())
 }
